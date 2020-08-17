@@ -176,6 +176,41 @@ function ruleCode(it: CompilationContext, keyword: string /*, ruleType */): void
   }
 }
 
+export function failKeyword(
+  condition: string,
+  it: CompilationContext,
+  keyword: string,
+  error: KeywordErrorDefinition
+) {
+  const {gen, opts} = it
+  const cxt = getKeywordContext(it, keyword)
+  gen.code(`if (${condition}) {`)
+  reportError(cxt, error)
+  gen.code(opts.allErrors ? "}" : "} else {")
+}
+
+export function getKeywordContext(it: CompilationContext, keyword: string): KeywordContext {
+  const {gen, schema, schemaPath, dataLevel} = it
+  const schemaCode = schemaRefOrVal(schema, schemaPath, keyword)
+  return {
+    gen,
+    fail: exception,
+    ok: exception,
+    errorParams: exception,
+    keyword,
+    data: "data" + (dataLevel || ""),
+    schema: schema[keyword],
+    schemaCode,
+    schemaValue: schemaCode,
+    parentSchema: schema,
+    it,
+  }
+}
+
+function exception() {
+  throw new Error("this function can only be used in keyword")
+}
+
 /**
  * Get keyword
  * @this  Ajv
